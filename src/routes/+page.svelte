@@ -2,17 +2,22 @@
   import { createQuery } from '@tanstack/svelte-query'
   import { browser } from '$app/environment'
   import { curriculumStore, validateCurriculum } from '$lib/stores'
-  import type { GraphNode, Mapping, ReviewItem } from '$lib/seed'
+  import type { PublicGraphState } from '$lib/graph'
+  import type { GraphNode, ReviewItem } from '$lib/seed'
 
-  type CurriculumResponse = { nodes: GraphNode[]; mappings: Mapping[]; reviewItems: ReviewItem[]; updatedAt: string }
+  type CurriculumResponse = PublicGraphState & { nodes: GraphNode[]; reviewItems: ReviewItem[]; updatedAt: string }
   const query = createQuery<CurriculumResponse>(() => ({
     queryKey: ['curriculum'],
     enabled: browser,
+    refetchInterval: 5000,
     queryFn: async () => {
       const response = await fetch('/api/curriculum')
       return response.json()
     },
   }))
+  $effect(() => {
+    if (query.data) curriculumStore.syncFromServer(query.data)
+  })
   const issues = $derived(validateCurriculum($curriculumStore))
   const reviewOpen = $derived($curriculumStore.reviewItems.filter((item) => item.status === '待审阅').length)
   const covered = $derived($curriculumStore.nodes.filter((node) => node.type === '毕业要求' && $curriculumStore.mappings.some((mapping) => mapping.source === node.id)).length)
@@ -22,9 +27,13 @@
 
 <section class="page">
   <div class="page-head">
-    <div><p class="eyebrow">CURRICULUM REFORM / 课程改革</p><h1>专业课程图谱总览</h1><p class="muted">从培养目标到考核证据的完整映射，当前数据由 SvelteKit API 与 TanStack Query 提供。</p></div>
+    <div><p class="eyebrow">CURRICULUM REFORM / 课程改革</p><h1>专业课程图谱总览 <span class="version-chip">图谱基线 R{$curriculumStore.version}</span></h1><p class="muted">从培养目标到考核证据的完整映射，连边按基线号整批提交，图谱版本变化即重算覆盖与校验。</p></div>
     <div class="actions"><a class="btn-secondary" href="/matrix">查看图谱</a><a class="btn-primary" href="/review">处理审阅</a></div>
   </div>
+
+  {#if $curriculumStore.notice}
+    <div class="notice">{$curriculumStore.notice}</div>
+  {/if}
 
   <div class="metric-grid">
     <article class="metric"><span>培养目标</span><strong>{$curriculumStore.nodes.filter((node) => node.type === '目标').length}</strong><small>2 条毕业要求主链</small></article>
@@ -71,6 +80,8 @@
 <style>
   .actions { display: flex; gap: 8px; flex-wrap: wrap; }
   .actions a { text-decoration: none; }
+  .version-chip { padding: 3px 9px; border-radius: 999px; color: #2c5f63; background: #e2efee; font-size: 12px; font-weight: 700; vertical-align: middle; }
+  .notice { margin-bottom: 12px; padding: 11px 14px; border-left: 3px solid #2f6f72; color: #28555a; background: #ecf4f3; font-size: 12px; }
   .overview-grid { display: grid; grid-template-columns: minmax(0,1fr) 340px; gap: 14px; }
   .chain { padding: 16px; }
   .chain article { padding: 14px; border-left: 4px solid #347d7b; background: #f5f8f8; }

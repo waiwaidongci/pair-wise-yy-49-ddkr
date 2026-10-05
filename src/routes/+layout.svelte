@@ -1,5 +1,6 @@
 <script lang="ts">
   import { page } from '$app/state'
+  import { onMount } from 'svelte'
   import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query'
   import { curriculumStore } from '$lib/stores'
   import '../app.css'
@@ -8,6 +9,10 @@
   })
   let { children } = $props()
   let mobileOpen = $state(false)
+  onMount(() => {
+    // 旧数据缺基线号：打开时自动迁移并接入图谱
+    curriculumStore.migrateIfNeeded()
+  })
   const nav = [
     { href: '/', label: '建设总览', icon: '总' },
     { href: '/courses', label: '课程与单元', icon: '课' },
@@ -27,7 +32,7 @@
           <a href={item.href} class:active={page.url.pathname === item.href} onclick={() => mobileOpen = false}><span>{item.icon}</span>{item.label}</a>
         {/each}
       </nav>
-      <div class="side-note"><strong>{$curriculumStore.locked ? '版本已锁定' : '草稿自动保存'}</strong><span>当前版本 {$curriculumStore.revision}</span></div>
+      <div class="side-note"><strong>{$curriculumStore.locked ? '版本已锁定' : '草稿自动保存'}</strong><span>当前版本 {$curriculumStore.revision} · 图谱基线 R{$curriculumStore.version}</span>{#if $curriculumStore.staged.length > 0}<span>{$curriculumStore.staged.length} 条连边待提交</span>{/if}{#if $curriculumStore.outbox.length > 0}<span class="warn">{$curriculumStore.outbox.length} 个批次写入失败待重试</span>{/if}</div>
     </aside>
     <main>
       <header class="mobile-header"><button onclick={() => mobileOpen = !mobileOpen}>菜单</button><strong>{page.data?.title ?? '课程标准映射'}</strong></header>
@@ -51,6 +56,7 @@
   .side-note { margin: auto 12px 14px; padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; background: rgba(255,255,255,.04); }
   .side-note strong, .side-note span { display: block; font-size: 11px; }
   .side-note span { margin-top: 5px; color: #9eb2b5; }
+  .side-note span.warn { color: #e8b48a; }
   main { min-width: 0; margin-left: 242px; }
   .mobile-header { display: none; }
   @media (max-width: 800px) {

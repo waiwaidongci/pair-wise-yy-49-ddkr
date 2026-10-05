@@ -1,3 +1,7 @@
+import type { Mapping } from './graph'
+
+export type { Mapping } from './graph'
+
 export type GraphNode = {
   id: string
   label: string
@@ -5,14 +9,6 @@ export type GraphNode = {
   x: number
   y: number
   course?: string
-}
-
-export type Mapping = {
-  id: string
-  source: string
-  target: string
-  relation: '支撑' | '前置' | '考核' | '教学'
-  weight: number
 }
 
 export type ReviewItem = {
@@ -40,6 +36,7 @@ export const nodes: GraphNode[] = [
   { id: 'A-308-04A', label: '需求追踪矩阵\n考核任务', type: '考核', x: 1070, y: 310 },
 ]
 
+// 旧数据：故意不带基线号且含重复边（M-11 与 M-06 重复），由服务端打开时自动迁移接入图谱
 export const mappings: Mapping[] = [
   { id: 'M-01', source: 'OBJ-01', target: 'GR-01', relation: '支撑', weight: 0.9 },
   { id: 'M-02', source: 'OBJ-02', target: 'GR-03', relation: '支撑', weight: 1 },
