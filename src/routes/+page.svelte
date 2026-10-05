@@ -1,7 +1,8 @@
 <script lang="ts">
   import { createQuery } from '@tanstack/svelte-query'
   import { browser } from '$app/environment'
-  import { curriculumStore, validateCurriculum } from '$lib/stores'
+  import { curriculumStore } from '$lib/stores'
+  import { validateGraph } from '$lib/graph'
   import type { GraphNode, Mapping, ReviewItem } from '$lib/seed'
 
   type CurriculumResponse = { nodes: GraphNode[]; mappings: Mapping[]; reviewItems: ReviewItem[]; updatedAt: string }
@@ -13,7 +14,7 @@
       return response.json()
     },
   }))
-  const issues = $derived(validateCurriculum($curriculumStore))
+  const issues = $derived(validateGraph($curriculumStore))
   const reviewOpen = $derived($curriculumStore.reviewItems.filter((item) => item.status === '待审阅').length)
   const covered = $derived($curriculumStore.nodes.filter((node) => node.type === '毕业要求' && $curriculumStore.mappings.some((mapping) => mapping.source === node.id)).length)
 </script>
